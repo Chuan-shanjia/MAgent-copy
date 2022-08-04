@@ -215,7 +215,7 @@ if __name__ == "__main__":
     if args.alg == 'dqn':
         RLModel = DeepQNetwork
         base_args = {'batch_size': batch_size,
-                     'memory_size': 2 ** 21, 'learning_rate': 1e-4,
+                     'memory_size': 16 * 625, 'learning_rate': 1e-4,
                      'target_update': target_update, 'train_freq': train_freq}
     elif args.alg == 'drqn':
         RLModel = DeepRecurrentQNetwork
