@@ -28,8 +28,16 @@ def generate_map(env, map_size, handles):
     n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
-        for y in range((height - side)//2, (height - side)//2 + side, 2):
+    # for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
+    #     for y in range((height - side)//2, (height - side)//2 + side, 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
+
+    for x in range(width//2 - side/2, width//2 + side/2, 2):
+        for y in range((height - side)//2 + side + 2, (height - side)//2 + side + 2 + side/2, 2):
+            pos.append([x, y, 0])
+    for x in range(width//2 - side/2, width//2 + side/2, 2):
+        for y in range((height - side) // 2 - 2 - side/2, (height - side) // 2 - 2, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
@@ -37,8 +45,13 @@ def generate_map(env, map_size, handles):
     n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(width//2 + gap, width//2 + gap + side, 2):
-        for y in range((height - side)//2, (height - side)//2 + side, 2):
+    # for x in range(width//2 + gap, width//2 + gap + side, 2):
+    #     for y in range((height - side)//2, (height - side)//2 + side, 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[rightID], method="custom", pos=pos)
+
+    for x in range(width//2 - side/2, width//2 + side/2, 2):
+        for y in range((height - side) // 2, (height - side) // 2 + side, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
