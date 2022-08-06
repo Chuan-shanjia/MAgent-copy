@@ -31,7 +31,7 @@ def generate_map(env, map_size, handles):
     for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
         for y in range((height - side)//2, (height - side)//2 + side, 2):
             pos.append([x, y, 0])
-    env.add_agents(handles[leftID], method="custom", pos=pos)
+    env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
     n = init_num
@@ -157,6 +157,7 @@ if __name__ == "__main__":
 
     # two groups of agents
     handles = env.get_handles()
+    #handles 是阵营，battle模式下有handle[LeftID],handles[RightID]
 
     # sample eval observation set
     eval_obs = [None, None]

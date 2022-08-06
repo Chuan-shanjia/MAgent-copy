@@ -569,6 +569,7 @@ class EventNode:
     OP_ALIGN = 10
 
     # can extend more operation below
+    #疑问，怎么自己定义这些动作呢？
 
     def __init__(self):
         # for non-leaf node
