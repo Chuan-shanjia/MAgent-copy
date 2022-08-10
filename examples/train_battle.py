@@ -28,32 +28,32 @@ def generate_map(env, map_size, handles):
     n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
-    # for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
-    #     for y in range((height - side)//2, (height - side)//2 + side, 2):
-    #         pos.append([x, y, 0])
-    # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
-
-    for x in range(width//2 - side/2, width//2 + side/2, 2):
-        for y in range((height - side)//2 + side + 2, (height - side)//2 + side + 2 + side/2, 2):
-            pos.append([x, y, 0])
-    for x in range(width//2 - side/2, width//2 + side/2, 2):
-        for y in range((height - side) // 2 - 2 - side/2, (height - side) // 2 - 2, 2):
+    for x in range(width//2 - gap - side - 2, width//2 - gap - side + side +2, 2):
+        for y in range((height - side)//2 - 2, (height - side)//2 + side + 2, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
+
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side)//2 + side + 2), int((height - side)//2 + side + 2 + side/2), 2):
+    #         pos.append([x, y, 0])
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side) // 2 - 2 - side/2), int((height - side) // 2 - 2), 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
     n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
-    # for x in range(width//2 + gap, width//2 + gap + side, 2):
-    #     for y in range((height - side)//2, (height - side)//2 + side, 2):
-    #         pos.append([x, y, 0])
-    # env.add_agents(handles[rightID], method="custom", pos=pos)
-
-    for x in range(width//2 - side/2, width//2 + side/2, 2):
-        for y in range((height - side) // 2, (height - side) // 2 + side, 2):
+    for x in range(width//2 + gap, width//2 + gap + side, 2):
+        for y in range((height - side)//2, (height - side)//2 + side, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
+
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side) // 2), int((height - side) // 2 + side), 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[rightID], method="custom", pos=pos)
 
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
@@ -121,7 +121,7 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
                   (step_ct, nums, np.around(step_reward, 2), np.around(total_reward, 2)))
 
         step_ct += 1
-        if step_ct > 550:
+        if step_ct > 1000:
             break
 
     sample_time = time.time() - start_time
@@ -182,7 +182,7 @@ if __name__ == "__main__":
             eval_obs[i] = buffer.sample_observation(env, handles, 2048, 500)
 
     # load models
-    batch_size = 256
+    batch_size = 1024
     unroll_step = 8
     target_update = 1200
     train_freq = 5
