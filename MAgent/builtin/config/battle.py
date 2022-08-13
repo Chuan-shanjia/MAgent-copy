@@ -31,5 +31,7 @@ def get_config(map_size):
     # reward shaping to encourage attack
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
     cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
+    cfg.add_reward_rule(gw.Event(a, 'in_a_line'), receiver=a, value=4)
+    cfg.add_reward_rule(gw.Event(b, 'in_a_line'), receiver=b, value=4)
 
     return cfg
