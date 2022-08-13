@@ -28,8 +28,8 @@ def generate_map(env, map_size, handles):
     n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(width//2 - gap - side - 2, width//2 - gap - side + side +2, 2):
-        for y in range((height - side)//2 - 2, (height - side)//2 + side + 2, 2):
+    for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
+        for y in range((height - side)//2, (height - side)//2 + side, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
@@ -93,6 +93,8 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
         step_reward = []
         for i in range(n):
             rewards = env.get_reward(handles[i])
+            #包围加奖励reward加系数
+            #pos = env.get_pos(handles[i])
             if train:
                 alives = env.get_alive(handles[i])
                 # store samples in replay buffer (non-blocking)
