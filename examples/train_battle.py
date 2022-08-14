@@ -13,6 +13,7 @@ import magent
 from magent import utility
 from models import buffer
 from model import ProcessingModel
+# import calculate_pos as cp
 
 leftID, rightID = 0, 1
 def generate_map(env, map_size, handles):
@@ -94,7 +95,7 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
         for i in range(n):
             rewards = env.get_reward(handles[i])
             #包围加奖励reward加系数
-            #pos = env.get_pos(handles[i])
+            pos = env.get_pos(handles[i])
             if train:
                 alives = env.get_alive(handles[i])
                 # store samples in replay buffer (non-blocking)
