@@ -14,10 +14,10 @@ def get_config(map_size):
     small = cfg.register_agent_type(
         "small",
         {'width': 1, 'length': 1, 'hp': 10, 'speed': 2,
-         'view_range': gw.CircleRange(100), 'attack_range': gw.CircleRange(1.5),
-         'damage': 2, 'step_recover': 0, 'kill_supply': 2,
+         'view_range': gw.CircleRange(12), 'attack_range': gw.CircleRange(1.5),
+         'damage': 2, 'step_recover': 0.1, 'kill_supply': 2,
 
-         'step_reward': -0.005,  'kill_reward': 5, 'dead_penalty': -0.1, 'attack_penalty': -0.1,
+         'step_reward': -0.005,  'kill_reward': 10, 'dead_penalty': -0.1, 'attack_penalty': -0.1,
          })
 
     #small是智能体的属性，可以改
