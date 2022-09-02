@@ -9,7 +9,7 @@ import time
 import magent
 from magent import utility
 from models import buffer
-from models.mx_model import DeepQNetwork as RLModel
+from models.tf_model import DeepQNetwork as RLModel
 # change this line to models.tf_model to use tensorflow
 
 
