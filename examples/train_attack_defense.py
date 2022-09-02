@@ -10,6 +10,7 @@ import magent
 from magent import utility
 from models import buffer
 from models.tf_model import DeepQNetwork as RLModel
+from model import ProcessingModel
 
 def load_config(size):
     gw = magent.gridworld
@@ -273,10 +274,14 @@ if __name__ == "__main__":
     names = [args.name + "-l", args.name + "-r"]
     models = []
 
+    base_args = {'batch_size': batch_size,
+                 'memory_size': 16 * 625, 'learning_rate': 1e-4,
+                 'target_update': target_update, 'train_freq': train_freq}
+
     for i in range(len(names)):
-        models.append(RLModel(env, player_handles[i], args.name,
-                batch_size=512, memory_size=2 ** 19, target_update=1000,
-                train_freq=4, eval_obs=eval_obs))
+        model_args = {'eval_obs': eval_obs[i]}
+        model_args.update(base_args)
+        models.append(ProcessingModel(env, handles[i], names[i], 20000+i, 1000, RLModel, **model_args))
 
     # load saved model
     save_dir = "save_model"
