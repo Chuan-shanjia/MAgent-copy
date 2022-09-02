@@ -9,7 +9,6 @@ import time
 import magent
 from magent import utility
 from models import buffer
-from models.tf_model import DeepQNetwork as RLModel
 from model import ProcessingModel
 
 def load_config(size):
@@ -148,7 +147,7 @@ def generate_map(env, map_size, food_handle, handles):
     # draw(offset + map_size // 2 - w // 2 * scale + len(legend), map_size // 2 - h // 2 * scale, scale, org)
 
 
-def play_a_round(env, map_size, food_handle, handles, models, train_id=-1,
+def play_a_round(env, map_size, food_handle, handles, models, train=0,
                  print_every=10, record=False, render=False, eps=None):
     env.reset()
     generate_map(env, map_size, food_handle, handles)
@@ -164,7 +163,7 @@ def play_a_round(env, map_size, food_handle, handles, models, train_id=-1,
     ids  = [None for _ in range(n)]
     acts = [None for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
-    sample_buffer = buffer.EpisodesBuffer(capacity=5000)
+    total_reward = [0 for _ in range(n)]
 
     print("===== sample =====")
     print("eps %s number %s" % (eps, nums))
@@ -174,40 +173,51 @@ def play_a_round(env, map_size, food_handle, handles, models, train_id=-1,
         for i in range(n):
             obs[i] = env.get_observation(handles[i])
             ids[i] = env.get_agent_id(handles[i])
-            acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
+            models[i].infer_action(obs[i], ids[i], 'e_greedy', eps, block=False)
+            # acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
+            # env.set_action(handles[i], acts[i])
+
+        for i in range(n):
+            acts[i] = models[i].fetch_action()  # fetch actions (blocking)
             env.set_action(handles[i], acts[i])
 
         # simulate one step
         done = env.step()
 
         # sample
-        rewards = env.get_reward(handles[train_id])
-        step_reward = 0
-        if train_id != -1:
-            alives  = env.get_alive(handles[train_id])
-            total_reward += sum(rewards)
-            sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
-            step_reward = sum(rewards)
+        step_reward = []
+        for i in range(n):
+            rewards = env.get_reward(handles[i])
+            # 包围加奖励reward加系数
+            pos = env.get_pos(handles[i])
+            if train:
+                alives = env.get_alive(handles[i])
+                # store samples in replay buffer (non-blocking)
+                models[i].sample_step(rewards, alives, block=False)
+            s = sum(rewards)
+            step_reward.append(s)
+            total_reward[i] += s
 
         # render
         if render:
             env.render()
 
-        for id, r in zip(ids[0], rewards):
-            if r > 0.05 and id not in pos_reward_ct:
-                pos_reward_ct.add(id)
+        # stat info
+        nums = [env.get_num(handle) for handle in handles]
+        food_num = env.get_num(food_handle)
 
         # clear dead agents
         env.clear_dead()
 
-        # stats info
-        for i in range(n):
-            nums[i] = env.get_num(handles[i])
-        food_num = env.get_num(food_handle)
+        # check return message of previous called non-blocking function sample_step()
+        if args.train:
+            for model in models:
+                model.check_done()
+
 
         if step_ct % print_every == 0:
-            print("step %3d,  train %d,  num %s,  reward %.2f,  total_reward: %.2f, non_zero: %d" %
-                  (step_ct, train_id, [food_num,nums], step_reward, total_reward, len(pos_reward_ct)))
+            print("step %3d,  num %s,  reward %.2f,  total_reward: %.2f, non_zero: %d" %
+                  (step_ct, [food_num,nums], np.around(step_reward, 2), np.around(total_reward, 2), len(pos_reward_ct)))
         step_ct += 1
 
         if step_ct > 1000:
@@ -221,15 +231,22 @@ def play_a_round(env, map_size, food_handle, handles, models, train_id=-1,
             fout.write(str(nums[0]) + "\n")
 
     # train
-    total_loss = value = 0
-    if train_id != -1:
+    total_loss, value = [0 for _ in range(n)], [0 for _ in range(n)]
+    if train:
         print("===== train =====")
         start_time = time.time()
-        total_loss, value = models[train_id].train(sample_buffer, print_every=250)
+
+        # train models in parallel
+        for i in range(n):
+            models[i].train(print_every=1000, block=False)
+        for i in range(n):
+            total_loss[i], value[i] = models[i].fetch_train()
+
         train_time = time.time() - start_time
         print("train_time %.2f" % train_time)
 
-    return total_loss, total_reward, value, len(pos_reward_ct)
+    def round_list(l): return [round(x, 2) for x in l]
+    return round_list(total_loss), nums, round_list(total_reward), round_list(value)
 
 
 if __name__ == "__main__":
@@ -246,6 +263,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="gather")
     parser.add_argument("--record", action="store_true")
     parser.add_argument("--eval", action="store_true")
+    parser.add_argument('--alg', default='dqn', choices=['dqn', 'drqn', 'a2c'])
     args = parser.parse_args()
 
     # set logger
@@ -263,33 +281,54 @@ if __name__ == "__main__":
     player_handles = handles[1:]
 
     # sample eval observation set
-    eval_obs = None
+    eval_obs = [None, None]
     if args.eval:
         print("sample eval set...")
         env.reset()
         generate_map(env, args.map_size, food_handle, player_handles)
-        eval_obs = buffer.sample_observation(env, player_handles, 0, 2048, 500)
+        for i in range(len(player_handles)):
+            eval_obs = buffer.sample_observation(env, player_handles[i], 2048, 500)
 
     # load models
+    batch_size = 1024
+    unroll_step = 8
+    target_update = 1200
+    train_freq = 5
+
+    if args.alg == 'dqn':
+        from models.tf_model import DeepQNetwork
+
+        RLModel = DeepQNetwork
+        base_args = {'batch_size': batch_size,
+                     'memory_size': 16 * 625, 'learning_rate': 1e-4,
+                     'target_update': target_update, 'train_freq': train_freq}
+    elif args.alg == 'drqn':
+        from models.tf_model import DeepRecurrentQNetwork
+
+        RLModel = DeepRecurrentQNetwork
+        base_args = {'batch_size': batch_size / unroll_step, 'unroll_step': unroll_step,
+                     'memory_size': 8 * 625, 'learning_rate': 1e-4,
+                     'target_update': target_update, 'train_freq': train_freq}
+    elif args.alg == 'a2c':
+        # see train_against.py to know how to use a2c
+        raise NotImplementedError
+
+    # init models
     names = [args.name + "-l", args.name + "-r"]
     models = []
-
-    base_args = {'batch_size': batch_size,
-                 'memory_size': 16 * 625, 'learning_rate': 1e-4,
-                 'target_update': target_update, 'train_freq': train_freq}
 
     for i in range(len(names)):
         model_args = {'eval_obs': eval_obs[i]}
         model_args.update(base_args)
-        models.append(ProcessingModel(env, handles[i], names[i], 20000+i, 1000, RLModel, **model_args))
+        models.append(ProcessingModel(env, handles[i], names[i], 20000 + i, 1000, RLModel, **model_args))
 
-    # load saved model
-    save_dir = "save_model"
+    # load if
+    savedir = 'save_model'
     if args.load_from is not None:
         start_from = args.load_from
-        print("load models...")
+        print("load ... %d" % start_from)
         for model in models:
-            model.load(save_dir, start_from)
+            model.load(savedir, start_from)
     else:
         start_from = 0
 
@@ -297,7 +336,7 @@ if __name__ == "__main__":
     print(args)
     print('view_space', env.get_view_space(player_handles[0]))
     print('feature_space', env.get_feature_space(player_handles[0]))
-    # print('view2attack', env.get_view2attack(player_handles[0]))
+    print('view2attack', env.get_view2attack(player_handles[0]))
 
     if args.record:
         for k in range(4, 999 + 5, 5):
@@ -310,20 +349,20 @@ if __name__ == "__main__":
     else:
         # play
         start = time.time()
-        train_id = 0 if args.train else -1
         for k in range(start_from, start_from + args.n_round):
             tic = time.time()
-            eps = buffer.piecewise_decay(k, [0, 400, 1000], [1.0, 0.2, 0.05]) if not args.greedy else 0
+            eps = buffer.piecewise_decay(k, [0, 700, 1400], [1, 0.2, 0.05]) if not args.greedy else 0
             loss, reward, value, pos_reward_ct = \
-                    play_a_round(env, args.map_size, food_handle, player_handles, models,
-                                 train_id, record=False,
-                                 render=args.render or (k+1) % args.render_every == 0,
-                                 print_every=args.print_every, eps=eps)
-            log.info("round %d\t loss: %.3f\t reward: %.2f\t value: %.3f\t pos_reward_ct: %d"
-                     % (k, loss, reward, value, pos_reward_ct))
+                play_a_round(env, args.map_size, food_handle, player_handles, models,
+                             train=args.train, record=False,
+                             render=args.render or (k + 1) % args.render_every == 0,
+                             print_every=args.print_every, eps=eps)
+
+            log.info("round %d\t loss: %s\t num: %s\t reward: %s\t value: %s" % (k, loss, num, reward, value))
             print("round time %.2f  total time %.2f\n" % (time.time() - tic, time.time() - start))
 
+            # save models
             if (k + 1) % args.save_every == 0 and args.train:
-                print("save models...")
+                print("save model... ")
                 for model in models:
-                    model.save(save_dir, k)
+                    model.save(savedir, k)
