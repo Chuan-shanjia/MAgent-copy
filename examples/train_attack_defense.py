@@ -1,5 +1,5 @@
 """
-Train two groups of agents, one to attack the building, one to defense
+Train agents to gather food
 """
 
 import argparse
@@ -9,7 +9,9 @@ import time
 import magent
 from magent import utility
 from models import buffer
-from model import ProcessingModel
+
+# change this line to models.tf_model to use tensorflow
+
 
 def load_config(size):
     gw = magent.gridworld
@@ -53,22 +55,26 @@ def load_config(size):
     g_a = cfg.add_group(agent)
     g_d = cfg.add_group(agent)
 
-    a = gw.AgentSymbol(g_f, index='any')
-    b = gw.AgentSymbol(g_a, index='any')
-    c = gw.AgentSymbol(g_d, index='any')
+    a = gw.AgentSymbol(g_a, index='any')
+    b = gw.AgentSymbol(g_d, index='any')
+    c = gw.AgentSymbol(g_f, index='any')
 
+    cfg.add_reward_rule(gw.Event(a, 'attack', c), receiver=a, value=0.5)
+    cfg.add_reward_rule(gw.Event(a, 'attack', c), receiver=b, value=-0.5)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=c, value=-0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', c), receiver=b, value=0.2)
-    cfg.add_reward_rule(gw.Event(c, 'attack', b), receiver=c, value=0.2)
+    cfg.add_reward_rule(gw.Event(b, 'attack', c), receiver=b, value=-100)
+
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
     return cfg
 
+
 def generate_map(env, map_size, food_handle, handles):
-    center_x, center_y = map_size // 3, map_size // 3
-    gap = 3
-    side = 40
+    #   env.add_agents()加智能体；handles[0]攻击方，handle[1]防守方
+
+    center_x, center_y = map_size // 2, map_size // 2
+
 
     def add_square(pos, side, gap):
         side = int(side)
@@ -79,75 +85,74 @@ def generate_map(env, map_size, food_handle, handles):
             pos.append([center_x - side//2, y])
             pos.append([center_x + side//2, y])
 
-    # agent_attack
+    # agent
     pos = []
-    for x in range(map_size // 2 + gap, map_size // 2 + gap + side, 4):
-        for y in range((map_size - side) // 2, (map_size - side) // 2 + side, 4):
-            pos.append([x, y, 0])
-    env.add_agents(handles[1], method="custom", pos=pos)
-
-    # agent_defense
-    pos = []
-    add_square(pos, map_size * 0.2, 2)
-    add_square(pos, map_size * 0.15, 2)
+    add_square(pos, map_size * 0.9, 3)
+    add_square(pos, map_size * 0.8, 4)
+    add_square(pos, map_size * 0.7, 6)
     env.add_agents(handles[0], method="custom", pos=pos)
 
     # food
     pos = []
-    add_square(pos, map_size * 0.1, 1)
-    add_square(pos, map_size * 0.1 - 2, 1)
-    add_square(pos, map_size * 0.1 - 4, 1)
-    add_square(pos, map_size * 0.1 - 6, 1)
+    add_square(pos, map_size * 0.65, 10)
+    add_square(pos, map_size * 0.6,  10)
+    add_square(pos, map_size * 0.55, 10)
+    add_square(pos, map_size * 0.5,  4)
+    add_square(pos, map_size * 0.45, 3)
+    add_square(pos, map_size * 0.4, 1)
+    add_square(pos, map_size * 0.3, 1)
+    add_square(pos, map_size * 0.3 - 2, 1)
+    add_square(pos, map_size * 0.3 - 4, 1)
+    add_square(pos, map_size * 0.3 - 6, 1)
     env.add_agents(food_handle, method="custom", pos=pos)
 
     # legend
+    legend = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+        [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,],
+        [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,],
+        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0,],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
+        [1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
+        [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
+        [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0,],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+    ]
 
-    # legend = [
-    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    #     [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,],
-    #     [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,],
-    #     [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0,],
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
-    #     [1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
-    #     [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0,],
-    #     [1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0,],
-    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    # ]
-    #
-    # org = [
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0,],
-    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-    # ]
-    #
-    # def draw(base_x, base_y, scale, data):
-    #     w, h = len(data), len(data[0])
-    #     pos = []
-    #     for i in range(w):
-    #         for j in range(h):
-    #             if data[i][j] == 1:
-    #                 start_x = i * scale + base_x
-    #                 start_y = j * scale + base_y
-    #                 for x in range(start_x, start_x + scale):
-    #                     for y in range(start_y, start_y + scale):
-    #                         pos.append([y, x])
-    #
-    #     env.add_agents(food_handle, method="custom", pos=pos)
-    #
-    # scale = 1
-    # w, h = len(legend), len(legend[0])
-    # offset = -3
-    # draw(offset + map_size // 2 - w // 2 * scale, map_size // 2 - h // 2 * scale, scale, legend)
-    # draw(offset + map_size // 2 - w // 2 * scale + len(legend), map_size // 2 - h // 2 * scale, scale, org)
+    org = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0,],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+    ]
+
+    def draw(base_x, base_y, scale, data):
+        w, h = len(data), len(data[0])
+        pos = []
+        for i in range(w):
+            for j in range(h):
+                if data[i][j] == 1:
+                    start_x = i * scale + base_x
+                    start_y = j * scale + base_y
+                    for x in range(start_x, start_x + scale):
+                        for y in range(start_y, start_y + scale):
+                            pos.append([y, x])
+
+        env.add_agents(food_handle, method="custom", pos=pos)
+
+    scale = 1
+    w, h = len(legend), len(legend[0])
+    offset = -3
+    draw(offset + map_size // 2 - w // 2 * scale, map_size // 2 - h // 2 * scale, scale, legend)
+    draw(offset + map_size // 2 - w // 2 * scale + len(legend), map_size // 2 - h // 2 * scale, scale, org)
 
 
-def play_a_round(env, map_size, food_handle, handles, models, train=0,
+def play_a_round(env, map_size, food_handle, handles, models, train_id=-1,
                  print_every=10, record=False, render=False, eps=None):
     env.reset()
     generate_map(env, map_size, food_handle, handles)
@@ -163,7 +168,7 @@ def play_a_round(env, map_size, food_handle, handles, models, train=0,
     ids  = [None for _ in range(n)]
     acts = [None for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
-    total_reward = [0 for _ in range(n)]
+    sample_buffer = buffer.EpisodesBuffer(capacity=5000)
 
     print("===== sample =====")
     print("eps %s number %s" % (eps, nums))
@@ -173,54 +178,43 @@ def play_a_round(env, map_size, food_handle, handles, models, train=0,
         for i in range(n):
             obs[i] = env.get_observation(handles[i])
             ids[i] = env.get_agent_id(handles[i])
-            models[i].infer_action(obs[i], ids[i], 'e_greedy', eps, block=False)
-            # acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
-            # env.set_action(handles[i], acts[i])
-
-        for i in range(n):
-            acts[i] = models[i].fetch_action()  # fetch actions (blocking)
+            acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
             env.set_action(handles[i], acts[i])
 
         # simulate one step
         done = env.step()
 
         # sample
-        step_reward = []
-        for i in range(n):
-            rewards = env.get_reward(handles[i])
-            # 包围加奖励reward加系数
-            pos = env.get_pos(handles[i])
-            if train:
-                alives = env.get_alive(handles[i])
-                # store samples in replay buffer (non-blocking)
-                models[i].sample_step(rewards, alives, block=False)
-            s = sum(rewards)
-            step_reward.append(s)
-            total_reward[i] += s
+        rewards = env.get_reward(handles[train_id])
+        step_reward = 0
+        if train_id != -1:
+            alives  = env.get_alive(handles[train_id])
+            total_reward += sum(rewards)
+            sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
+            step_reward = sum(rewards)
 
         # render
         if render:
             env.render()
 
-        # stat info
-        nums = [env.get_num(handle) for handle in handles]
-        food_num = env.get_num(food_handle)
+        for id, r in zip(ids[0], rewards):
+            if r > 0.05 and id not in pos_reward_ct:
+                pos_reward_ct.add(id)
 
         # clear dead agents
         env.clear_dead()
 
-        # check return message of previous called non-blocking function sample_step()
-        if args.train:
-            for model in models:
-                model.check_done()
-
+        # stats info
+        for i in range(n):
+            nums[i] = env.get_num(handles[i])
+        food_num = env.get_num(food_handle)
 
         if step_ct % print_every == 0:
-            print("step %3d,  num %s,  reward %.2f,  total_reward: %.2f, non_zero: %d" %
-                  (step_ct, [food_num,nums], np.around(step_reward, 2), np.around(total_reward, 2), len(pos_reward_ct)))
+            print("step %3d,  train %d,  food_num %s,  agent_numbers %s, reward %.2f,  total_reward: %.2f, non_zero: %d" %
+                  (step_ct, train_id, food_num, nums, step_reward, total_reward, len(pos_reward_ct)))
         step_ct += 1
 
-        if step_ct > 1000:
+        if step_ct > 350:
             break
 
     sample_time = time.time() - start_time
@@ -231,22 +225,15 @@ def play_a_round(env, map_size, food_handle, handles, models, train=0,
             fout.write(str(nums[0]) + "\n")
 
     # train
-    total_loss, value = [0 for _ in range(n)], [0 for _ in range(n)]
-    if train:
+    total_loss = value = 0
+    if train_id != -1:
         print("===== train =====")
         start_time = time.time()
-
-        # train models in parallel
-        for i in range(n):
-            models[i].train(print_every=1000, block=False)
-        for i in range(n):
-            total_loss[i], value[i] = models[i].fetch_train()
-
+        total_loss, value = models[train_id].train(sample_buffer, print_every=250)
         train_time = time.time() - start_time
         print("train_time %.2f" % train_time)
 
-    def round_list(l): return [round(x, 2) for x in l]
-    return round_list(total_loss), nums, round_list(total_reward), round_list(value)
+    return total_loss, total_reward, value, len(pos_reward_ct)
 
 
 if __name__ == "__main__":
@@ -263,7 +250,6 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="gather")
     parser.add_argument("--record", action="store_true")
     parser.add_argument("--eval", action="store_true")
-    parser.add_argument('--alg', default='dqn', choices=['dqn', 'drqn', 'a2c'])
     args = parser.parse_args()
 
     # set logger
@@ -281,54 +267,30 @@ if __name__ == "__main__":
     player_handles = handles[1:]
 
     # sample eval observation set
-    eval_obs = [None, None]
+    eval_obs = None
     if args.eval:
         print("sample eval set...")
         env.reset()
         generate_map(env, args.map_size, food_handle, player_handles)
-        for i in range(len(player_handles)):
-            eval_obs = buffer.sample_observation(env, player_handles[i], 2048, 500)
+        eval_obs = buffer.sample_observation(env, player_handles, 0, 2048, 500)
 
     # load models
-    batch_size = 1024
-    unroll_step = 8
-    target_update = 1200
-    train_freq = 5
+    from models.tf_model import DeepQNetwork
+    RLModel = DeepQNetwork
 
-    if args.alg == 'dqn':
-        from models.tf_model import DeepQNetwork
+    models = [
+        RLModel(env, player_handles[0], args.name,
+                batch_size=512, memory_size=2 ** 19, target_update=1000,
+                train_freq=4, eval_obs=eval_obs),
+    ]
 
-        RLModel = DeepQNetwork
-        base_args = {'batch_size': batch_size,
-                     'memory_size': 16 * 625, 'learning_rate': 1e-4,
-                     'target_update': target_update, 'train_freq': train_freq}
-    elif args.alg == 'drqn':
-        from models.tf_model import DeepRecurrentQNetwork
-
-        RLModel = DeepRecurrentQNetwork
-        base_args = {'batch_size': batch_size / unroll_step, 'unroll_step': unroll_step,
-                     'memory_size': 8 * 625, 'learning_rate': 1e-4,
-                     'target_update': target_update, 'train_freq': train_freq}
-    elif args.alg == 'a2c':
-        # see train_against.py to know how to use a2c
-        raise NotImplementedError
-
-    # init models
-    names = [args.name + "-l", args.name + "-r"]
-    models = []
-
-    for i in range(len(names)):
-        model_args = {'eval_obs': eval_obs[i]}
-        model_args.update(base_args)
-        models.append(ProcessingModel(env, handles[i], names[i], 20000 + i, 1000, RLModel, **model_args))
-
-    # load if
-    savedir = 'save_model'
+    # load saved model
+    save_dir = "save_model"
     if args.load_from is not None:
         start_from = args.load_from
-        print("load ... %d" % start_from)
+        print("load models...")
         for model in models:
-            model.load(savedir, start_from)
+            model.load(save_dir, start_from)
     else:
         start_from = 0
 
@@ -349,20 +311,20 @@ if __name__ == "__main__":
     else:
         # play
         start = time.time()
+        train_id = 0 if args.train else -1
         for k in range(start_from, start_from + args.n_round):
             tic = time.time()
-            eps = buffer.piecewise_decay(k, [0, 700, 1400], [1, 0.2, 0.05]) if not args.greedy else 0
+            eps = buffer.piecewise_decay(k, [0, 400, 1000], [1.0, 0.2, 0.05]) if not args.greedy else 0
             loss, reward, value, pos_reward_ct = \
-                play_a_round(env, args.map_size, food_handle, player_handles, models,
-                             train=args.train, record=False,
-                             render=args.render or (k + 1) % args.render_every == 0,
-                             print_every=args.print_every, eps=eps)
-
-            log.info("round %d\t loss: %s\t num: %s\t reward: %s\t value: %s" % (k, loss, num, reward, value))
+                    play_a_round(env, args.map_size, food_handle, player_handles, models,
+                                 train_id, record=False,
+                                 render=args.render or (k+1) % args.render_every == 0,
+                                 print_every=args.print_every, eps=eps)
+            log.info("round %d\t loss: %.3f\t reward: %.2f\t value: %.3f\t pos_reward_ct: %d"
+                     % (k, loss, reward, value, pos_reward_ct))
             print("round time %.2f  total time %.2f\n" % (time.time() - tic, time.time() - start))
 
-            # save models
             if (k + 1) % args.save_every == 0 and args.train:
-                print("save model... ")
+                print("save models...")
                 for model in models:
-                    model.save(savedir, k)
+                    model.save(save_dir, k)
