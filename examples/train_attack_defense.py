@@ -9,6 +9,7 @@ import time
 import magent
 from magent import utility
 from models import buffer
+from model import ProcessingModel
 
 # change this line to models.tf_model to use tensorflow
 
@@ -267,30 +268,42 @@ if __name__ == "__main__":
     player_handles = handles[1:]
 
     # sample eval observation set
-    eval_obs = None
+    eval_obs = [None, None]
     if args.eval:
         print("sample eval set...")
         env.reset()
         generate_map(env, args.map_size, food_handle, player_handles)
-        eval_obs = buffer.sample_observation(env, player_handles, 0, 2048, 500)
+        for i in range(len(player_handles)):
+            eval_obs[i] = buffer.sample_observation(env, player_handles, 2048, 500)
 
     # load models
+    batch_size = 1024
+    unroll_step = 8
+    target_update = 1200
+    train_freq = 5
+
     from models.tf_model import DeepQNetwork
     RLModel = DeepQNetwork
+    base_args = {'batch_size': batch_size,
+                 'memory_size': 16 * 625, 'learning_rate': 1e-4,
+                 'target_update': target_update, 'train_freq': train_freq}
 
-    models = [
-        RLModel(env, player_handles[0], args.name,
-                batch_size=512, memory_size=2 ** 19, target_update=1000,
-                train_freq=4, eval_obs=eval_obs),
-    ]
+    # init models
+    names = [args.name + "-l", args.name + "-r"]
+    models = []
+
+    for i in range(len(names)):
+        model_args = {'eval_obs': eval_obs[i]}
+        model_args.update(base_args)
+        models.append(ProcessingModel(env, handles[i], names[i], 20000 + i, 1000, RLModel, **model_args))
 
     # load saved model
-    save_dir = "save_model"
+    save_dir = 'save_model'
     if args.load_from is not None:
         start_from = args.load_from
-        print("load models...")
+        print("load ... %d" % start_from)
         for model in models:
-            model.load(save_dir, start_from)
+            model.load(savedir, start_from)
     else:
         start_from = 0
 
