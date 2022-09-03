@@ -16,10 +16,10 @@ def get_config(map_size):
         {
             "width": 1,
             "length": 1,
-            "hp": 10,
-            "speed": 2,
+            "hp": 15,
+            "speed": 4,
             "view_range": gw.CircleRange(6),
-            "attack_range": gw.CircleRange(1.5),
+            "attack_range": gw.CircleRange(4),
             "damage": 2,
             "step_recover": 0.1,
             "step_reward": -0.005,
