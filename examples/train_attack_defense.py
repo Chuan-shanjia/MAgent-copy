@@ -40,17 +40,34 @@ def get_config(map_size):
             "attack_penalty": -0.1,
         },
     )
+    big = cfg.register_agent_type(
+        "big",
+        {
+            "width": 1,
+            "length": 1,
+            "hp": 20,
+            "speed": 3,
+            "view_range": gw.CircleRange(6),
+            "attack_range": gw.CircleRange(1.5),
+            "damage": 5,
+            "step_recover": 0.1,
+            "step_reward": -0.005,
+            "kill_reward": 10,
+            "dead_penalty": -0.1,
+            "attack_penalty": -0.1,
+        },
+    )
 
     #small是智能体的属性，可以改
 
     g0 = cfg.add_group(small)   #group_handle : int，handle的标号
-    g1 = cfg.add_group(small)
+    g1 = cfg.add_group(big)
 
     a = gw.AgentSymbol(g0, index='any')
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
-    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.4)    #Event是gridworld中的EventNode类
     cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
     return cfg
@@ -62,8 +79,8 @@ def generate_map(env, map_size, handles):
     init_num = map_size * map_size * 0.04
     gap = 3
 
-    global leftID, rightID
-    leftID, rightID = rightID, leftID
+    # global leftID, rightID
+    # leftID, rightID = rightID, leftID
 
     # left
     n = init_num
@@ -83,7 +100,7 @@ def generate_map(env, map_size, handles):
     # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
-    n = init_num
+    n = init_num//2
     side = int(math.sqrt(n)) * 2
     pos = []
     for x in range(width//2 + gap, width//2 + gap + side, 2):
