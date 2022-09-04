@@ -15,12 +15,13 @@ from models import buffer
 from model import ProcessingModel
 # import calculate_pos as cp
 
-def load_config(size):
+def get_config(map_size):
     gw = magent.gridworld
     cfg = gw.Config()
 
-    cfg.set({"map_width": size, "map_height": size})
+    cfg.set({"map_width": map_size, "map_height": map_size})
     cfg.set({"minimap_mode": True})
+    cfg.set({"embedding_size": 10})
 
     small = cfg.register_agent_type(
         "small",
@@ -40,33 +41,17 @@ def load_config(size):
         },
     )
 
-    food = cfg.register_agent_type(
-        name="food",
-        attr={
-            "width": 1,
-            "length": 1,
-            "hp": 20,
-            "speed": 0,
-            "view_range": gw.CircleRange(1),
-            "attack_range": gw.CircleRange(0),
-            "kill_reward": 5,
-        },
-    )
+    #small是智能体的属性，可以改
 
-    g_f = cfg.add_group(food)
-    g_a = cfg.add_group(small)
-    g_d = cfg.add_group(small)
+    g0 = cfg.add_group(small)   #group_handle : int，handle的标号
+    g1 = cfg.add_group(small)
 
-    a = gw.AgentSymbol(g_f, index='any')
-    b = gw.AgentSymbol(g_a, index='any')
-    c = gw.AgentSymbol(g_d, index='any')
+    a = gw.AgentSymbol(g0, index='any')
+    b = gw.AgentSymbol(g1, index='any')
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', c), receiver=b, value=0.2)
-    cfg.add_reward_rule(gw.Event(c, 'attack', b), receiver=c, value=0.2)
-
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=c, value=-0.5)
-    cfg.add_reward_rule(gw.Event(c, 'attack', a), receiver=c, value=-100)
+    # reward shaping to encourage attack
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
     return cfg
 
@@ -223,7 +208,7 @@ if __name__ == "__main__":
     buffer.init_logger(args.name)
 
     # init the game
-    env = magent.GridWorld(load_config)
+    env = magent.GridWorld(get_config(map_size=args.map_size))
     env.set_render_dir("build/render")
 
     # two groups of agents
@@ -307,3 +292,4 @@ if __name__ == "__main__":
     # send quit command
     for model in models:
         model.quit()
+
