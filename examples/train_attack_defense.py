@@ -15,6 +15,61 @@ from models import buffer
 from model import ProcessingModel
 # import calculate_pos as cp
 
+def load_config(size):
+    gw = magent.gridworld
+    cfg = gw.Config()
+
+    cfg.set({"map_width": size, "map_height": size})
+    cfg.set({"minimap_mode": True})
+
+    small = cfg.register_agent_type(
+        "small",
+        {
+            "width": 1,
+            "length": 1,
+            "hp": 10,
+            "speed": 2,
+            "view_range": gw.CircleRange(6),
+            "attack_range": gw.CircleRange(1.5),
+            "damage": 2,
+            "step_recover": 0.1,
+            "step_reward": -0.005,
+            "kill_reward": 5,
+            "dead_penalty": -0.1,
+            "attack_penalty": -0.1,
+        },
+    )
+
+    food = cfg.register_agent_type(
+        name="food",
+        attr={
+            "width": 1,
+            "length": 1,
+            "hp": 20,
+            "speed": 0,
+            "view_range": gw.CircleRange(1),
+            "attack_range": gw.CircleRange(0),
+            "kill_reward": 5,
+        },
+    )
+
+    g_f = cfg.add_group(food)
+    g_a = cfg.add_group(small)
+    g_d = cfg.add_group(small)
+
+    a = gw.AgentSymbol(g_f, index='any')
+    b = gw.AgentSymbol(g_a, index='any')
+    c = gw.AgentSymbol(g_d, index='any')
+
+    cfg.add_reward_rule(gw.Event(b, 'attack', c), receiver=b, value=0.2)
+    cfg.add_reward_rule(gw.Event(c, 'attack', b), receiver=c, value=0.2)
+
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=c, value=-0.5)
+    cfg.add_reward_rule(gw.Event(c, 'attack', a), receiver=c, value=-100)
+
+    return cfg
+
 leftID, rightID = 0, 1
 def generate_map(env, map_size, handles):
     """ generate a map, which consists of two squares of agents"""
@@ -168,7 +223,7 @@ if __name__ == "__main__":
     buffer.init_logger(args.name)
 
     # init the game
-    env = magent.GridWorld("battle", map_size=args.map_size)
+    env = magent.GridWorld(load_config)
     env.set_render_dir("build/render")
 
     # two groups of agents
