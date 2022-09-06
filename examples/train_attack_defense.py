@@ -40,35 +40,37 @@ def get_config(map_size):
             "attack_penalty": -0.1,
         },
     )
-    big = cfg.register_agent_type(
-        "big",
+    food = cfg.register_agent_type(
+        "food",
         {
             "width": 1,
             "length": 1,
-            "hp": 20,
-            "speed": 3,
-            "view_range": gw.CircleRange(6),
-            "attack_range": gw.CircleRange(1.5),
-            "damage": 5,
-            "step_recover": 0.1,
-            "step_reward": -0.005,
-            "kill_reward": 10,
-            "dead_penalty": -0.1,
-            "attack_penalty": -0.1,
+            "hp": 25,
+            "speed": 0,
+            "view_range": gw.CircleRange(1),
+            "attack_range": gw.CircleRange(0),
+            "kill_reward": 5,
         },
     )
 
     #small是智能体的属性，可以改
 
     g0 = cfg.add_group(small)   #group_handle : int，handle的标号
-    g1 = cfg.add_group(big)
+    g1 = cfg.add_group(small)
+    gf = cfg.add_group(food)
 
+
+    f = gw.AgentSymbol(gf, index='any')
     a = gw.AgentSymbol(g0, index='any')
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
-    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.4)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.15)    #Event是gridworld中的EventNode类
     cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
+
+    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=0.5)
+    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=b, value=-0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=-50)
 
     return cfg
 
@@ -100,7 +102,7 @@ def generate_map(env, map_size, handles):
     # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
-    n = init_num//2
+    n = init_num
     side = int(math.sqrt(n)) * 2
     pos = []
     for x in range(width//2 + gap, width//2 + gap + side, 2):
@@ -113,6 +115,15 @@ def generate_map(env, map_size, handles):
     #         pos.append([x, y, 0])
     # env.add_agents(handles[rightID], method="custom", pos=pos)
 
+    # food
+    n = init_num//4
+    side = int(math.sqrt(n)) * 2
+    pos = []
+    for x in range(width // 2 - gap - side - 1, width // 2 - gap - side + side, 2):
+        for y in range((height - side) // 2, (height - side) // 2 + side, 2):
+            pos.append([x, y, 0])
+
+
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
     """play a ground and train"""
@@ -122,15 +133,16 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
     step_ct = 0 #每次采样的最大轮数（帧数）
     done = False
 
-    n = len(handles)
+    n = len(handles) - 1
     obs  = [[] for _ in range(n)]
     ids  = [[] for _ in range(n)]
     acts = [[] for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
+    food_num = env.get_num(handles[n])
     total_reward = [0 for _ in range(n)]
 
     print("===== sample =====")
-    print("eps %.2f number %s" % (eps, nums))
+    print("eps %.2f number %s food_number %s" % (eps, nums, food_num))
     start_time = time.time()
     while not done:
         # take actions for every model
@@ -177,8 +189,8 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
                 model.check_done()
 
         if step_ct % print_every == 0:
-            print("step %3d,  nums: %s reward: %s,  total_reward: %s " %
-                  (step_ct, nums, np.around(step_reward, 2), np.around(total_reward, 2)))
+            print("step %3d,  nums: %s nums: %s reward: %s,  total_reward: %s " %
+                  (step_ct, nums, food_num, np.around(step_reward, 2), np.around(total_reward, 2)))
 
         step_ct += 1
         if step_ct > 1000:
