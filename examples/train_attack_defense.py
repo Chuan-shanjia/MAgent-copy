@@ -24,7 +24,7 @@ def get_config(map_size):
     cfg.set({"embedding_size": 10})
 
     small = cfg.register_agent_type(
-        "small",
+        "attack",
         {
             "width": 1,
             "length": 1,
@@ -40,6 +40,7 @@ def get_config(map_size):
             "attack_penalty": -0.1,
         },
     )
+
     food = cfg.register_agent_type(
         "food",
         {
@@ -54,6 +55,7 @@ def get_config(map_size):
     )
 
     #small是智能体的属性，可以改
+    # a, g0, defense, left, handles[0]
 
     g0 = cfg.add_group(small)   #group_handle : int，handle的标号
     g1 = cfg.add_group(small)
@@ -65,12 +67,12 @@ def get_config(map_size):
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
-    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.15)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.15)
 
-    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=0.5)
-    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=b, value=-0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=-50)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-0.5)
+    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=-50)
 
     return cfg
 
@@ -133,9 +135,9 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
 
     step_ct = 0 #每次采样的最大轮数（帧数）
     done = False
-    food_handle = handles.pop()
+    food_handle = handles[2]
 
-    n = len(handles)
+    n = len(handles) - 1
     obs  = [[] for _ in range(n)]
     ids  = [[] for _ in range(n)]
     acts = [[] for _ in range(n)]
@@ -191,8 +193,8 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
                 model.check_done()
 
         if step_ct % print_every == 0:
-            print("step %3d,  nums: %s nums: %s reward: %s,  total_reward: %s " %
-                  (step_ct, nums, food_num, np.around(step_reward, 2), np.around(total_reward, 2)))
+            print("step %3d,  nums: %s reward: %s,  total_reward: %s " %
+                  (step_ct, nums, np.around(step_reward, 2), np.around(total_reward, 2)))
 
         step_ct += 1
         if step_ct > 1000:
