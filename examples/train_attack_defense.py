@@ -122,6 +122,7 @@ def generate_map(env, map_size, handles):
     for x in range(width // 2 - gap - side - 1, width // 2 - gap - side + side, 2):
         for y in range((height - side) // 2, (height - side) // 2 + side, 2):
             pos.append([x, y, 0])
+    env.add_agents(handles[2], method="custom", pos=pos)
 
 
 
@@ -132,13 +133,14 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
 
     step_ct = 0 #每次采样的最大轮数（帧数）
     done = False
+    food_handle = handles.pop()
 
-    n = len(handles) - 1
+    n = len(handles)
     obs  = [[] for _ in range(n)]
     ids  = [[] for _ in range(n)]
     acts = [[] for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
-    food_num = env.get_num(handles[n])
+    food_num = env.get_num(food_handle)
     total_reward = [0 for _ in range(n)]
 
     print("===== sample =====")
