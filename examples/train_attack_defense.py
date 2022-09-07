@@ -83,28 +83,30 @@ def generate_map(env, map_size, handles):
     init_num = map_size * map_size * 0.04
     gap = 3
 
+
     # global leftID, rightID
     # leftID, rightID = rightID, leftID
 
     # left
-    n = init_num
-    side = int(math.sqrt(n)) * 2
+    # n = 100
     pos = []
-    for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
-        for y in range((height - side)//2, (height - side)//2 + side, 2):
+    for x in range(16, 23, 2):
+        for y in range(7, 42, 2):
             pos.append([x, y, 0])
+    for x in range(10, 15, 2):
+        for y in range(7, 14, 2):
+            pos.append([x, y, 0])
+    for x in range(10, 15, 2):
+        for y in range(35, 42, 2):
+            pos.append([x, y, 0])
+    pos.append([8, 11, 0])
+    pos.append([8, 13, 0])
+    pos.append([8, 35, 0])
+    pos.append([8, 37, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
-    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
-    #     for y in range(int((height - side)//2 + side + 2), int((height - side)//2 + side + 2 + side/2), 2):
-    #         pos.append([x, y, 0])
-    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
-    #     for y in range(int((height - side) // 2 - 2 - side/2), int((height - side) // 2 - 2), 2):
-    #         pos.append([x, y, 0])
-    # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
-
     # right
-    n = init_num
+    n = 100
     side = int(math.sqrt(n)) * 2
     pos = []
     for x in range(width//2 + gap, width//2 + gap + side, 2):
@@ -112,17 +114,11 @@ def generate_map(env, map_size, handles):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
-    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
-    #     for y in range(int((height - side) // 2), int((height - side) // 2 + side), 2):
-    #         pos.append([x, y, 0])
-    # env.add_agents(handles[rightID], method="custom", pos=pos)
-
     # food
-    n = init_num//4
-    side = int(math.sqrt(n)) * 2
+    # n = 25
     pos = []
-    for x in range(width // 2 - gap - side - 1, width // 2 - gap - side + side, 2):
-        for y in range((height - side) // 2, (height - side) // 2 + side, 2):
+    for x in range(10, 15, 1):
+        for y in range(23, 28, 1):
             pos.append([x, y, 0])
     env.add_agents(handles[2], method="custom", pos=pos)
 
