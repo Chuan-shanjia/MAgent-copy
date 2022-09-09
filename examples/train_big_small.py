@@ -41,16 +41,21 @@ def get_config(map_size):
         },
     )
 
-    food = cfg.register_agent_type(
-        "food",
+    big = cfg.register_agent_type(
+        "small",
         {
             "width": 1,
             "length": 1,
-            "hp": 25,
-            "speed": 0,
-            "view_range": gw.CircleRange(1),
-            "attack_range": gw.CircleRange(0),
-            "kill_reward": 5,
+            "hp": 20,
+            "speed": 3,
+            "view_range": gw.CircleRange(6),
+            "attack_range": gw.CircleRange(1.5),
+            "damage": 4,
+            "step_recover": 0.5,
+            "step_reward": -0.005,
+            "kill_reward": 10,
+            "dead_penalty": -0.1,
+            "attack_penalty": -0.1,
         },
     )
 
@@ -58,21 +63,15 @@ def get_config(map_size):
     # a, g0, defense, left, handles[0]
 
     g0 = cfg.add_group(small)   #group_handle : int，handle的标号
-    g1 = cfg.add_group(small)
-    gf = cfg.add_group(food)
+    g1 = cfg.add_group(big)
 
 
-    f = gw.AgentSymbol(gf, index='any')
     a = gw.AgentSymbol(g0, index='any')
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
-    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.15)
-
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-0.5)
-    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=-50)
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.5)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
     return cfg
 
@@ -83,30 +82,28 @@ def generate_map(env, map_size, handles):
     init_num = map_size * map_size * 0.04
     gap = 3
 
-
-    # global leftID, rightID
-    # leftID, rightID = rightID, leftID
+    global leftID, rightID
+    leftID, rightID = rightID, leftID
 
     # left
-    # n = 100
+    n = init_num
+    side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(16, 23, 2):
-        for y in range(7, 42, 2):
+    for x in range(width//2 - gap - side, width//2 - gap - side + side, 2):
+        for y in range((height - side)//2, (height - side)//2 + side, 2):
             pos.append([x, y, 0])
-    for x in range(10, 15, 2):
-        for y in range(7, 14, 2):
-            pos.append([x, y, 0])
-    for x in range(10, 15, 2):
-        for y in range(35, 42, 2):
-            pos.append([x, y, 0])
-    pos.append([8, 11, 0])
-    pos.append([8, 13, 0])
-    pos.append([8, 35, 0])
-    pos.append([8, 37, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side)//2 + side + 2), int((height - side)//2 + side + 2 + side/2), 2):
+    #         pos.append([x, y, 0])
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side) // 2 - 2 - side/2), int((height - side) // 2 - 2), 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
+
     # right
-    n = 100
+    n = init_num//4
     side = int(math.sqrt(n)) * 2
     pos = []
     for x in range(width//2 + gap, width//2 + gap + side, 2):
@@ -114,14 +111,10 @@ def generate_map(env, map_size, handles):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
-    # food
-    # n = 25
-    pos = []
-    for x in range(10, 15, 1):
-        for y in range(23, 28, 1):
-            pos.append([x, y, 0])
-    env.add_agents(handles[2], method="custom", pos=pos)
-
+    # for x in range(int(width//2 - side/2), int(width//2 + side/2), 2):
+    #     for y in range(int((height - side) // 2), int((height - side) // 2 + side), 2):
+    #         pos.append([x, y, 0])
+    # env.add_agents(handles[rightID], method="custom", pos=pos)
 
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
@@ -131,18 +124,16 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
 
     step_ct = 0 #每次采样的最大轮数（帧数）
     done = False
-    food_handle = handles[2]
 
-    n = len(handles) - 1
+    n = len(handles)
     obs  = [[] for _ in range(n)]
     ids  = [[] for _ in range(n)]
     acts = [[] for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
-    food_num = env.get_num(food_handle)
     total_reward = [0 for _ in range(n)]
 
     print("===== sample =====")
-    print("eps %.2f number %s food_number %s" % (eps, nums, food_num))
+    print("eps %.2f number %s" % (eps, nums))
     start_time = time.time()
     while not done:
         # take actions for every model
