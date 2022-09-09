@@ -42,7 +42,7 @@ def get_config(map_size):
     )
 
     big = cfg.register_agent_type(
-        "small",
+        "big",
         {
             "width": 1,
             "length": 1,
@@ -82,8 +82,8 @@ def generate_map(env, map_size, handles):
     init_num = map_size * map_size * 0.04
     gap = 3
 
-    global leftID, rightID
-    leftID, rightID = rightID, leftID
+    # global leftID, rightID
+    # leftID, rightID = rightID, leftID
 
     # left
     n = init_num
