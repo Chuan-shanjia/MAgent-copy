@@ -24,7 +24,7 @@ def get_config(map_size):
     cfg.set({"embedding_size": 10})
 
     small = cfg.register_agent_type(
-        "small",
+        "attack",
         {
             "width": 1,
             "length": 1,
@@ -119,7 +119,7 @@ def generate_map(env, map_size, handles):
     pos = []
     for x in range(10, 15, 1):
         for y in range(23, 28, 1):
-            pos.append([x, y, 0])
+            pos.append([x - 9, y - 8, 0])
     env.add_agents(handles[2], method="custom", pos=pos)
 
 
