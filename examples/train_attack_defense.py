@@ -83,9 +83,6 @@ def get_config(map_size):
 ID_a, ID_b, ID_fa, ID_fb = 0, 1, 2, 3
 def generate_map(env, map_size, handles):
     """ generate a map, which consists of two squares of agents"""
-    width = height = map_size
-    init_num = map_size * map_size * 0.04
-    gap = 3
 
     global ID_a, ID_b, ID_fa, ID_fb
     ID_a, ID_b = ID_b, ID_a
@@ -94,7 +91,7 @@ def generate_map(env, map_size, handles):
     #left_food
     n = 15
     a1 = random.sample(range(2, 35, 2), n)
-    a2 = random.sample(range(2, 35, 2), n)
+    a2 = random.sample(range(2, 100, 2), n)
     pos = [a1, a2]
     pos.append([0 for x in range(n)])
     pos = list(map(list, zip(*pos)))
@@ -130,10 +127,16 @@ def generate_map(env, map_size, handles):
     pos = list(map(list, zip(*pos)))
     env.add_agents(handles[ID_a], method="custom", pos=pos)
 
+    pos = []
+    for x in range(40, 47, 2):
+        for y in range(5, 99, 10):
+            pos.append([x, y, 0])
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
     # right_food
     n = 15
     a1 = random.sample(range(65, 98, 2), n)
-    a2 = random.sample(range(65, 98, 2), n)
+    a2 = random.sample(range(2, 100, 2), n)
     pos = [a1, a2]
     pos.append([0 for x in range(n)])
     pos = list(map(list, zip(*pos)))
@@ -167,6 +170,12 @@ def generate_map(env, map_size, handles):
     pos = [b1, b2]
     pos.append([0 for x in range(n)])
     pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    pos = []
+    for x in range(52, 59, 2):
+        for y in range(5, 99, 10):
+            pos.append([x, y, 0])
     env.add_agents(handles[ID_b], method="custom", pos=pos)
 
 
