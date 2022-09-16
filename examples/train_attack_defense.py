@@ -90,8 +90,8 @@ def generate_map(env, map_size, handles):
 
     #left_food
     n = 15
-    a1 = random.sample(range(2, 35, 2), n)
-    a2 = random.sample(range(2, 100, 2), n)
+    a1 = random.sample(range(3, 37, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
     pos = [a1, a2]
     pos.append([0 for x in range(n)])
     pos = list(map(list, zip(*pos)))
@@ -135,8 +135,8 @@ def generate_map(env, map_size, handles):
 
     # right_food
     n = 15
-    a1 = random.sample(range(65, 98, 2), n)
-    a2 = random.sample(range(2, 100, 2), n)
+    a1 = random.sample(range(63, 97, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
     pos = [a1, a2]
     pos.append([0 for x in range(n)])
     pos = list(map(list, zip(*pos)))
@@ -295,7 +295,6 @@ if __name__ == "__main__":
 
     # two groups of agents
     handles = env.get_handles()
-    #handles 是阵营，battle模式下有handle[LeftID],handles[RightID]
 
     # sample eval observation set
     eval_obs = [None, None]
