@@ -31,7 +31,7 @@ def get_config(map_size):
             "length": 1,
             "hp": 10,
             "speed": 2,
-            "view_range": gw.CircleRange(6),
+            "view_range": gw.CircleRange(12),
             "attack_range": gw.CircleRange(1.5),
             "damage": 2,
             "step_recover": 0.1,
@@ -89,37 +89,94 @@ def generate_map(env, map_size, handles):
     ID_fa, ID_fb = ID_fb, ID_fa
 
     #left_food
-    #n = 25
-    pos = []
-    for x in range(14,23,2):
-        for y in range(45, 54, 2):
-            pos.append([x, y, 0])
+    n = 15
+    a1 = random.sample(range(3, 37, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
+    pos = [a1, a2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
     env.add_agents(handles[ID_fa], method="custom", pos=pos)
 
     # left_agent
-    # n = 104
+    # n = 60 + 40
+    b1 = [i - 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i - 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
     pos = []
-    for x in range(25, 40, 2):
-        for y in range(20, 81, 5):
+    for x in range(40, 47, 2):
+        for y in range(5, 99, 10):
             pos.append([x, y, 0])
     env.add_agents(handles[ID_a], method="custom", pos=pos)
 
     # right_food
-    # n = 25
-    pos = []
-    for x in range(77, 86, 2):
-        for y in range(45, 54, 2):
-            pos.append([x, y, 0])
+    n = 15
+    a1 = random.sample(range(63, 97, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
+    pos = [a1, a2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
     env.add_agents(handles[ID_fb], method="custom", pos=pos)
 
     # right_agent
-    # n = 104
-    pos = []
-    for x in range(60, 75, 2):
-        for y in range(20, 81, 5):
-            pos.append([x, y, 0])
+    # n = 60 + 40
+    b1 = [i - 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
     env.add_agents(handles[ID_b], method="custom", pos=pos)
 
+    b1 = [i - 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    pos = []
+    for x in range(52, 59, 2):
+        for y in range(5, 99, 10):
+            pos.append([x, y, 0])
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
 
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
