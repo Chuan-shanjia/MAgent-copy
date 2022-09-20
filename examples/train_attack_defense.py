@@ -8,6 +8,7 @@ import logging as log
 import math
 
 import numpy as np
+import random
 
 import magent
 from magent import utility
@@ -24,13 +25,13 @@ def get_config(map_size):
     cfg.set({"embedding_size": 10})
 
     small = cfg.register_agent_type(
-        "attack",
+        "small",
         {
             "width": 1,
             "length": 1,
             "hp": 10,
             "speed": 2,
-            "view_range": gw.CircleRange(6),
+            "view_range": gw.CircleRange(12),
             "attack_range": gw.CircleRange(1.5),
             "damage": 2,
             "step_recover": 0.1,
@@ -54,74 +55,128 @@ def get_config(map_size):
         },
     )
 
-    #small是智能体的属性，可以改
-    # a, g0, defense, left, handles[0]
-
-    g0 = cfg.add_group(small)   #group_handle : int，handle的标号
+    g0 = cfg.add_group(small)
     g1 = cfg.add_group(small)
-    gf = cfg.add_group(food)
+    g2 = cfg.add_group(food)
+    g3 = cfg.add_group(food)
 
 
-    f = gw.AgentSymbol(gf, index='any')
+    f_a = gw.AgentSymbol(g2, index='any')
+    f_b = gw.AgentSymbol(g3, index='any')
     a = gw.AgentSymbol(g0, index='any')
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.15)
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.5)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-0.5)
-    cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=-50)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f_a), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f_a), receiver=a, value=-0.5)
+    cfg.add_reward_rule(gw.Event(a, 'attack', f_a), receiver=a, value=-50)
+
+    cfg.add_reward_rule(gw.Event(a, 'attack', f_b), receiver=a, value=0.5)
+    cfg.add_reward_rule(gw.Event(a, 'attack', f_b), receiver=b, value=-0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f_b), receiver=b, value=-50)
 
     return cfg
 
-leftID, rightID = 0, 1
+ID_a, ID_b, ID_fa, ID_fb = 0, 1, 2, 3
 def generate_map(env, map_size, handles):
     """ generate a map, which consists of two squares of agents"""
-    width = height = map_size
-    init_num = map_size * map_size * 0.04
-    gap = 3
 
+    global ID_a, ID_b, ID_fa, ID_fb
+    ID_a, ID_b = ID_b, ID_a
+    ID_fa, ID_fb = ID_fb, ID_fa
 
-    # global leftID, rightID
-    # leftID, rightID = rightID, leftID
+    #left_food
+    n = 15
+    a1 = random.sample(range(3, 37, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
+    pos = [a1, a2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_fa], method="custom", pos=pos)
 
-    # left
-    # n = 100
+    # left_agent
+    # n = 60 + 40
+    b1 = [i - 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i - 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
+
     pos = []
-    for x in range(16, 23, 2):
-        for y in range(7, 42, 2):
+    for x in range(40, 47, 2):
+        for y in range(5, 99, 10):
             pos.append([x, y, 0])
-    for x in range(10, 15, 2):
-        for y in range(7, 14, 2):
-            pos.append([x, y, 0])
-    for x in range(10, 15, 2):
-        for y in range(35, 42, 2):
-            pos.append([x, y, 0])
-    pos.append([8, 11, 0])
-    pos.append([8, 13, 0])
-    pos.append([8, 35, 0])
-    pos.append([8, 37, 0])
-    env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
+    env.add_agents(handles[ID_a], method="custom", pos=pos)
 
-    # right
-    n = 100
-    side = int(math.sqrt(n)) * 2
+    # right_food
+    n = 15
+    a1 = random.sample(range(63, 97, 2), n)
+    a2 = random.sample(range(3, 97, 2), n)
+    pos = [a1, a2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_fb], method="custom", pos=pos)
+
+    # right_agent
+    # n = 60 + 40
+    b1 = [i - 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    b1 = [i - 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i - 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
+    b1 = [i + 1 for i in a1]
+    b2 = [i + 1 for i in a2]
+    pos = [b1, b2]
+    pos.append([0 for x in range(n)])
+    pos = list(map(list, zip(*pos)))
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
+
     pos = []
-    for x in range(width//2 + gap, width//2 + gap + side, 2):
-        for y in range((height - side)//2, (height - side)//2 + side, 2):
+    for x in range(52, 59, 2):
+        for y in range(5, 99, 10):
             pos.append([x, y, 0])
-    env.add_agents(handles[rightID], method="custom", pos=pos)
-
-    # food
-    # n = 25
-    pos = []
-    for x in range(10, 15, 1):
-        for y in range(23, 28, 1):
-            pos.append([x, y, 0])
-    env.add_agents(handles[2], method="custom", pos=pos)
-
+    env.add_agents(handles[ID_b], method="custom", pos=pos)
 
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
@@ -131,18 +186,16 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
 
     step_ct = 0 #每次采样的最大轮数（帧数）
     done = False
-    food_handle = handles[2]
 
-    n = len(handles) - 1
+    n = len(handles) - 2
     obs  = [[] for _ in range(n)]
     ids  = [[] for _ in range(n)]
     acts = [[] for _ in range(n)]
     nums = [env.get_num(handle) for handle in handles]
-    food_num = env.get_num(food_handle)
     total_reward = [0 for _ in range(n)]
 
     print("===== sample =====")
-    print("eps %.2f number %s food_number %s" % (eps, nums, food_num))
+    print("eps %.2f number %s" % (eps, nums))
     start_time = time.time()
     while not done:
         # take actions for every model
@@ -242,7 +295,6 @@ if __name__ == "__main__":
 
     # two groups of agents
     handles = env.get_handles()
-    #handles 是阵营，battle模式下有handle[LeftID],handles[RightID]
 
     # sample eval observation set
     eval_obs = [None, None]
