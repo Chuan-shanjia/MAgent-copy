@@ -68,10 +68,10 @@ def get_config(map_size):
 
     # reward shaping to encourage attack
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.15)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.25)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-0.5)
     cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=-50)
 
     return cfg
@@ -109,8 +109,8 @@ def generate_map(env, map_size, handles):
     n = 100
     side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(width//2 + gap, width//2 + gap + side + 2, 2):
-        for y in range((height - side)//2, (height - side)//2 + side + 2, 2):
+    for x in range(width//2 + gap, width//2 + gap + side, 2):
+        for y in range((height - side)//2, (height - side)//2 + side, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
