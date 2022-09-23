@@ -62,16 +62,22 @@ for filename in files_name:
     y1_agent = []
     x2_agent = []
     y2_agent = []
+    x_food = []
+    y_food = []
 
     for i in range(n_pic):
         for li in text_agent_all[i]:
-            if li[0] < 247:
+            if li[5] == 0:
                 x1_agent.append(li[3])
                 y1_agent.append(li[4])
-            else:
+            elif li[5] == 1:
                 x2_agent.append(li[3])
                 y2_agent.append(li[4])
-        plt.plot(x_wall,y_wall,'ks',x1_agent, y1_agent, 'bs',x2_agent, y2_agent, 'rs',markersize=1)
+            elif li[5] == 2:
+                x_food.append(li[3])
+                y_food.append(li[4])
+        plt.figure(dpi=500)
+        plt.plot(x_wall, y_wall, 'ks', x1_agent, y1_agent, 'bs', x2_agent, y2_agent, 'rs', x_food, y_food, 'b*', markersize=1)
         name = filename[:filename.index('.')]
         if not os.path.exists('./build/'+name):
             os.mkdir('./build/'+name)
@@ -81,6 +87,8 @@ for filename in files_name:
         y1_agent = []
         x2_agent = []
         y2_agent = []
+        x_food = []
+        y_food = []
 
 
     # plt.plot(x_wall,y_wall,'bs')
