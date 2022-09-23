@@ -73,11 +73,11 @@ for filename in files_name:
             elif li[5] == 1:
                 x2_agent.append(li[3])
                 y2_agent.append(li[4])
-            elif li[5] == 2:
+            elif li[5] == 2 or li[5] == 3:
                 x_food.append(li[3])
                 y_food.append(li[4])
-        plt.figure(dpi=500)
-        plt.plot(x_wall, y_wall, 'ks', x1_agent, y1_agent, 'bs', x2_agent, y2_agent, 'rs', x_food, y_food, 'b*', markersize=1)
+        plt.figure(figsize=(10,10))
+        plt.plot(x_wall, y_wall, 'ks', x1_agent, y1_agent, 'bs', x2_agent, y2_agent, 'rs', x_food, y_food, 'b*', markersize=4)
         name = filename[:filename.index('.')]
         if not os.path.exists('./build/'+name):
             os.mkdir('./build/'+name)
