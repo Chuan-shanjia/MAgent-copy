@@ -88,7 +88,7 @@ def generate_map(env, map_size, handles):
     # leftID, rightID = rightID, leftID
 
     # left
-    # n = 100
+    # n = 90
     pos = []
     for x in range(13, 24, 2):
         for y in range(10, 40, 2):
@@ -96,16 +96,15 @@ def generate_map(env, map_size, handles):
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
-    n = 100
-    side = int(math.sqrt(n)) * 2
+    # n = 90
     pos = []
     for x in range(27, 38, 2):
-        for y in range(10, 40, 2):
+        for y in range(8, 42, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
     # food
-    # n = 25
+    # n = 30
     pos = []
     for x in range(8, 11, 2):
         for y in range(10, 40, 2):
