@@ -68,9 +68,9 @@ def get_config(map_size):
 
     # reward shaping to encourage attack
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.15)
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=b, value=0.3)
     cfg.add_reward_rule(gw.Event(b, 'attack', f), receiver=a, value=-0.5)
     cfg.add_reward_rule(gw.Event(a, 'attack', f), receiver=a, value=-50)
 
@@ -90,8 +90,8 @@ def generate_map(env, map_size, handles):
     # left
     # n = 100
     pos = []
-    for x in range(15, 24, 2):
-        for y in range(10, 90, 4):
+    for x in range(13, 24, 2):
+        for y in range(10, 40, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
@@ -99,16 +99,16 @@ def generate_map(env, map_size, handles):
     n = 100
     side = int(math.sqrt(n)) * 2
     pos = []
-    for x in range(width//2 + gap, width//2 + gap + side, 2):
-        for y in range((height - side)//2, (height - side)//2 + side, 2):
+    for x in range(27, 38, 2):
+        for y in range(10, 40, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
     # food
     # n = 25
     pos = []
-    for x in range(10, 13, 2):
-        for y in range(20, 80, 2):
+    for x in range(8, 11, 2):
+        for y in range(10, 40, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[2], method="custom", pos=pos)
 
