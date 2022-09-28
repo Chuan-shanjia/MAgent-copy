@@ -91,15 +91,16 @@ def generate_map(env, map_size, handles):
     # n = 90
     pos = []
     for x in range(13, 24, 2):
-        for y in range(10, 40, 2):
+        for y in range(8, 42, 2):
             pos.append([x, y, 0])
+
     env.add_agents(handles[leftID], method="custom", pos=pos)   #pos是每个智能体的位置，因此包含数目信息
 
     # right
     # n = 90
     pos = []
     for x in range(27, 38, 2):
-        for y in range(8, 42, 2):
+        for y in range(10, 40, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
@@ -107,7 +108,10 @@ def generate_map(env, map_size, handles):
     # n = 30
     pos = []
     for x in range(8, 11, 2):
-        for y in range(10, 40, 2):
+        for y in range(10, 20, 1):
+            pos.append([x, y, 0])
+    for x in range(8, 11, 2):
+        for y in range(30, 40, 1):
             pos.append([x, y, 0])
     env.add_agents(handles[2], method="custom", pos=pos)
 
