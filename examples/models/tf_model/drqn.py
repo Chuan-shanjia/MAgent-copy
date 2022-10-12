@@ -5,7 +5,7 @@ import os
 import collections
 
 import numpy as np
-import tensorflow as tf
+import import tensorflow.compat.v1 as tf
 
 from .base import TFBaseModel
 

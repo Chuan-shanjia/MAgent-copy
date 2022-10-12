@@ -248,7 +248,7 @@ if __name__ == "__main__":
             eval_obs[i] = buffer.sample_observation(env, handles, 2048, 500)
 
     # load models
-    batch_size = 1024
+    batch_size = 256
     unroll_step = 8
     target_update = 1200
     train_freq = 5
