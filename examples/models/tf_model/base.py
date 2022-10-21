@@ -1,5 +1,7 @@
 import os
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
+tf.disable_v2_behavior()
 
 from model import BaseModel
 

@@ -135,11 +135,11 @@ class AdvantageActorCritic(TFBaseModel):
             the input shape
         """
         # input
-        input_view    = tf.placeholder(tf.float32, (None,) + view_space)
-        input_feature = tf.placeholder(tf.float32, (None,) + feature_space)
-        action = tf.placeholder(tf.int32, [None])
-        reward = tf.placeholder(tf.float32, [None])
-        num_agent = tf.placeholder(tf.int32, [])
+        input_view    = tf.keras.Input(tf.float32, (None,) + view_space)
+        input_feature = tf.keras.Input(tf.float32, (None,) + feature_space)
+        action = tf.keras.Input(tf.int32, [None])
+        reward = tf.keras.Input(tf.float32, [None])
+        num_agent = tf.keras.Input(tf.int32, [])
 
         kernel_num = [32, 32]
         hidden_size = [256]

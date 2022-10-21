@@ -3,7 +3,11 @@
 import time
 
 import numpy as np
-import tensorflow as tf
+
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
+tf.disable_v2_behavior()
+
 
 from .base import TFBaseModel
 from ..common import ReplayBuffer
@@ -165,11 +169,11 @@ class DeepQNetwork(TFBaseModel):
                                        activation=tf.nn.relu, name="conv1", reuse=reuse)
             h_conv2 = tf.layers.conv2d(h_conv1, filters=kernel_num[1], kernel_size=3,
                                        activation=tf.nn.relu, name="conv2", reuse=reuse)
-            flatten_view = tf.reshape(h_conv2, [-1, np.prod([v.value for v in h_conv2.shape[1:]])])
+            flatten_view = tf.reshape(h_conv2, [-1, np.prod([v for v in h_conv2.shape[1:]])])
             h_view = tf.layers.dense(flatten_view, units=hidden_size[0], activation=tf.nn.relu,
                                      name="dense_view", reuse=reuse)
         else:         # fully connected
-            flatten_view = tf.reshape(input_view, [-1, np.prod([v.value for v in input_view.shape[1:]])])
+            flatten_view = tf.reshape(input_view, [-1, np.prod([v for v in input_view.shape[1:]])])
             h_view = tf.layers.dense(flatten_view, units=hidden_size[0], activation=tf.nn.relu)
 
         h_emb = tf.layers.dense(input_feature,  units=hidden_size[0], activation=tf.nn.relu,

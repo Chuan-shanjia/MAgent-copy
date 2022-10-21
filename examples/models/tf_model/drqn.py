@@ -75,15 +75,15 @@ class DeepRecurrentQNetwork(TFBaseModel):
 
         # ======================= build network =======================
         # input place holder
-        self.target = tf.placeholder(tf.float32, [None])
+        self.target = tf.keras.Input(tf.float32, [None])
 
-        self.input_view    = tf.placeholder(tf.float32, (None,) + self.view_space, name="input_view")
-        self.input_feature = tf.placeholder(tf.float32, (None,) + self.feature_space, name="input_feature")
-        self.action = tf.placeholder(tf.int32, [None], name="action")
-        self.mask   = tf.placeholder(tf.float32, [None], name="mask")
+        self.input_view    = tf.keras.Input(tf.float32, (None,) + self.view_space, name="input_view")
+        self.input_feature = tf.keras.Input(tf.float32, (None,) + self.feature_space, name="input_feature")
+        self.action = tf.keras.Input(tf.int32, [None], name="action")
+        self.mask   = tf.keras.Input(tf.float32, [None], name="mask")
 
-        self.batch_size_ph   = tf.placeholder(tf.int32, [])
-        self.unroll_step_ph = tf.placeholder(tf.int32, [])
+        self.batch_size_ph   = tf.keras.Input(tf.int32, [])
+        self.unroll_step_ph = tf.keras.Input(tf.int32, [])
 
         # build graph
         with tf.variable_scope(self.name):

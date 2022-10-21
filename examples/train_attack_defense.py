@@ -62,8 +62,6 @@ def get_config(map_size):
     gf1 = cfg.add_group(food)
     gf2 = cfg.add_group(food)
 
-
-
     f1 = gw.AgentSymbol(gf1, index='any')
     f2 = gw.AgentSymbol(gf2, index='any')
     a = gw.AgentSymbol(g0, index='any')
@@ -73,11 +71,11 @@ def get_config(map_size):
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
     cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=0.32)
     cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=a, value=-0.5)
     cfg.add_reward_rule(gw.Event(a, 'attack', f1), receiver=a, value=-50)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=0.45)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=0.22)
     cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=a, value=-2)
     cfg.add_reward_rule(gw.Event(a, 'attack', f2), receiver=a, value=-50)
 
@@ -117,8 +115,8 @@ def generate_map(env, map_size, handles):
     # right
     n = 100
     pos = []
-    for x in range(28, 38, 2):
-        for y in range(3, 47, 2):
+    for x in range(30, 40, 2):
+        for y in range(5, 45, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
@@ -224,7 +222,7 @@ if __name__ == "__main__":
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--load_from", type=int)
     parser.add_argument("--train", action="store_true")
-    parser.add_argument("--map_size", type=int, default=125)
+    parser.add_argument("--map_size", type=int, default=50)
     parser.add_argument("--greedy", action="store_true")
     parser.add_argument("--name", type=str, default="battle")
     parser.add_argument("--eval", action="store_true")
@@ -261,7 +259,7 @@ if __name__ == "__main__":
         from models.tf_model import DeepQNetwork
         RLModel = DeepQNetwork
         base_args = {'batch_size': batch_size,
-                     'memory_size': 2**20, 'learning_rate': 1e-4,
+                     'memory_size': 8 * 625, 'learning_rate': 1e-4,
                      'target_update': target_update, 'train_freq': train_freq}
     elif args.alg == 'drqn':
         from models.tf_model import DeepRecurrentQNetwork
