@@ -77,12 +77,13 @@ for filename in files_name:
                 x_food.append(li[3])
                 y_food.append(li[4])
         plt.figure(figsize=(10,10))
-        plt.plot(x_wall, y_wall, 'ks', x1_agent, y1_agent, 'rs', x2_agent, y2_agent, 'bs', x_food, y_food, 'r*', markersize=4)
+        plt.plot(x_wall, y_wall, 'ks', x1_agent, y1_agent, 'rs', x2_agent, y2_agent, 'bs', x_food, y_food, 'y*', markersize=4)
         name = filename[:filename.index('.')]
         if not os.path.exists('./build/'+name):
             os.mkdir('./build/'+name)
         plt.savefig('./build/{}/pic-{}.png'.format(name,i + 1))
-        plt.show()
+        # plt.show()
+        plt.close()
         x1_agent = []
         y1_agent = []
         x2_agent = []
