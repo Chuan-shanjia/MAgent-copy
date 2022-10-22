@@ -106,7 +106,7 @@ def generate_map(env, map_size, handles):
     # left
     # n = 100
     pos = []
-    for x in range(15, 25, 2):
+    for x in range(13, 25, 2):
         for y in range(5, 45, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)
@@ -118,13 +118,6 @@ def generate_map(env, map_size, handles):
         for y in range(5, 45, 2):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
-
-# def generate_right2(env, handles):
-#     pos = []
-#     for x in range(60, 70, 2):
-#         for y in range(50, 90, 4):
-#             pos.append([x, y, 0])
-#     env.add_agents(handles[rightID], method="custom", pos=pos)
 
 
 def play_a_round(env, map_size, handles, models, print_every, train=True, render=False, eps=None):
