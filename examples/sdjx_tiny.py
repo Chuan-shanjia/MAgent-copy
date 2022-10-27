@@ -68,11 +68,11 @@ def get_config(map_size):
     cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
     cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=0.3)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=1)
     cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=a, value=-1)
     cfg.add_reward_rule(gw.Event(a, 'attack', f1), receiver=a, value=-50)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=0.3)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=1)
     cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=a, value=-1)
     cfg.add_reward_rule(gw.Event(a, 'attack', f2), receiver=a, value=-50)
 
@@ -111,11 +111,47 @@ def generate_map(env, map_size, handles):
             pos.append([x, y, 0])
     env.add_agents(handles[leftID], method="custom", pos=pos)
 
-    # right_1
+    # right
     # n = 50
     pos = []
     for x in range(30, 40, 2):
         for y in range(5, 45, 2):
+            pos.append([x, y, 0])
+    env.add_agents(handles[rightID], method="custom", pos=pos)
+
+def generate_map2(env, map_size, handles):
+    """ generate a map, which consists of two squares of agents"""
+
+    # global leftID, rightID
+    # leftID, rightID = rightID, leftID
+
+    #target_1
+    pos = []
+    for x in range(5, 10):
+        for y in range(5, 10):
+            pos.append([x, y, 0])
+    env.add_agents(handles[targetID1], method="custom", pos=pos)
+
+    #target_2
+    pos = []
+    for x in range(5, 10):
+        for y in range(40, 45):
+            pos.append([x, y, 0])
+    env.add_agents(handles[targetID2], method="custom", pos=pos)
+
+    # left
+    # n = 100
+    pos = []
+    for x in range(15, 25, 2):
+        for y in range(5, 45, 2):
+            pos.append([x, y, 0])
+    env.add_agents(handles[leftID], method="custom", pos=pos)
+
+    # right
+    # n = 50
+    pos = []
+    for x in range(30, 40, 2):
+        for y in range(25, 45, 1):
             pos.append([x, y, 0])
     env.add_agents(handles[rightID], method="custom", pos=pos)
 
@@ -124,6 +160,101 @@ def play_a_round(env, map_size, handles, models, print_every, train=True, render
     """play a ground and train"""
     env.reset()
     generate_map(env, map_size, handles)
+    # generate_right2(env, handles)
+
+    step_ct = 0 #每次采样的最大轮数（帧数）
+    done = False
+
+    n = len(handles) - 2
+    obs  = [[] for _ in range(n)]
+    ids  = [[] for _ in range(n)]
+    acts = [[] for _ in range(n)]
+    nums = [env.get_num(handle) for handle in handles]
+    total_reward = [0 for _ in range(n)]
+
+    print("===== sample =====")
+    print("eps %.2f number %s " % (eps, nums))
+    start_time = time.time()
+    while not done:
+        # take actions for every model
+        for i in range(n):
+            obs[i] = env.get_observation(handles[i])
+            ids[i] = env.get_agent_id(handles[i])
+            # let models infer action in parallel (non-blocking)
+            models[i].infer_action(obs[i], ids[i], 'e_greedy', eps, block=False)
+
+        for i in range(n):
+            acts[i] = models[i].fetch_action()  # fetch actions (blocking)
+            env.set_action(handles[i], acts[i])
+
+        # simulate one step
+        done = env.step()
+
+        # sample
+        step_reward = []
+        for i in range(n):
+            rewards = env.get_reward(handles[i])
+            #包围加奖励reward加系数
+            pos = env.get_pos(handles[i])
+            if train:
+                alives = env.get_alive(handles[i])
+                # store samples in replay buffer (non-blocking)
+                models[i].sample_step(rewards, alives, block=False)
+            s = sum(rewards)
+            step_reward.append(s)
+            total_reward[i] += s
+
+        # render
+        if render:
+            env.render()
+
+        # stat info
+        nums = [env.get_num(handle) for handle in handles]
+
+        # clear dead agents
+        env.clear_dead()
+
+        # check return message of previous called non-blocking function sample_step()
+        if args.train:
+            for model in models:
+                model.check_done()
+
+        if step_ct % print_every == 0:
+            print("step %3d,  nums: %s reward: %s,  total_reward: %s " %
+                  (step_ct, nums, np.around(step_reward, 2), np.around(total_reward, 2)))
+
+        step_ct += 1
+        if step_ct > 1000:
+            break
+
+    sample_time = time.time() - start_time
+    print("steps: %d,  total time: %.2f,  step average %.2f" % (step_ct, sample_time, sample_time / step_ct))
+
+    # train
+    total_loss, value = [0 for _ in range(n)], [0 for _ in range(n)]
+    if train:
+        print("===== train =====")
+        start_time = time.time()
+
+        # train models in parallel
+        for i in range(n):
+            models[i].train(print_every=100, block=False)
+        for i in range(n):
+            total_loss[i], value[i] = models[i].fetch_train()
+
+        train_time = time.time() - start_time
+        print("train_time %.2f" % train_time)
+
+    def round_list(l): return [round(x, 2) for x in l]
+    return round_list(total_loss), nums, round_list(total_reward), round_list(value)
+
+def play_a_round(k, env, map_size, handles, models, print_every, train=True, render=False, eps=None):
+    """play a ground and train"""
+    env.reset()
+    if k%2 == 1:
+        generate_map(env, map_size, handles)
+    else:
+        generate_map2(env, map_size, handles)
     # generate_right2(env, handles)
 
     step_ct = 0 #每次采样的最大轮数（帧数）
@@ -299,7 +430,8 @@ if __name__ == "__main__":
     for k in range(start_from, start_from + args.n_round):
         tic = time.time()
         eps = buffer.piecewise_decay(k, [0, 700, 1400], [1, 0.2, 0.05]) if not args.greedy else 0
-        loss, num, reward, value = play_a_round(env, args.map_size, handles, models,
+
+        loss, num, reward, value = play_a_round(k, env, args.map_size, handles, models,
                                                 train=args.train, print_every=50,
                                                 render=args.render or (k+1) % args.render_every == 0,
                                                 eps=eps)  # for e-greedy
