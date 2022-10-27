@@ -159,10 +159,7 @@ def generate_map2(env, map_size, handles):
 def play_a_round(k, env, map_size, handles, models, print_every, train=True, render=False, eps=None):
     """play a ground and train"""
     env.reset()
-    if k%20 < 10:
-        generate_map(env, map_size, handles)
-    else:
-        generate_map2(env, map_size, handles)
+    generate_map2(env, map_size, handles)
     # generate_right2(env, handles)
 
     step_ct = 0 #每次采样的最大轮数（帧数）
