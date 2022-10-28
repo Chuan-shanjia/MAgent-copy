@@ -65,15 +65,15 @@ def get_config(map_size):
     b = gw.AgentSymbol(g1, index='any')
 
     # reward shaping to encourage attack
-    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.3)    #Event是gridworld中的EventNode类
-    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.3)
+    cfg.add_reward_rule(gw.Event(a, 'attack', b), receiver=a, value=0.2)    #Event是gridworld中的EventNode类
+    cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=b, value=0.2)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=1)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=a, value=-0.1)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f1), receiver=a, value=-0.2)
     cfg.add_reward_rule(gw.Event(a, 'attack', f1), receiver=a, value=-50)
 
-    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=1)
-    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=a, value=-0.1)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=b, value=0.5)
+    cfg.add_reward_rule(gw.Event(b, 'attack', f2), receiver=a, value=-0.2)
     cfg.add_reward_rule(gw.Event(a, 'attack', f2), receiver=a, value=-50)
 
     return cfg
